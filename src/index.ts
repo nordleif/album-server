@@ -6,9 +6,9 @@ import request from 'request';
 import path from 'path';
 
 dotenv.config();
-const port = process.env.SERVER_PORT;
-const clientId = process.env.CLIENT_ID;
-const clientSecret = process.env.CLIENT_SECRET;
+const port = process.env.SERVER_PORT || 8080;
+const clientId = process.env.CLIENT_ID || '2914b90321254148b57f41438e31d7b3';
+const clientSecret = process.env.CLIENT_SECRET || '3d275f3a9f704c0484b4af6ef5456c89';
 
 const app = express();
 app.use(cors());
