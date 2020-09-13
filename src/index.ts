@@ -8,7 +8,7 @@ import request from 'request';
 import { JsonRpcFuncSet, JsonRpcRequest } from './json-rpc';
 
 dotenv.config();
-const port = process.env.SERVER_PORT || 8080;
+const port = (process.env.SERVER_PORT || 8080) as number;
 const clientId = process.env.CLIENT_ID || '2914b90321254148b57f41438e31d7b3';
 const clientSecret = process.env.CLIENT_SECRET || '3d275f3a9f704c0484b4af6ef5456c89';
 
@@ -44,7 +44,7 @@ app.post('/api/rpc', (req, res) => {
 
 app.get('*', (req, res) => res.sendFile(path.resolve(__dirname, 'dist/index.html')));
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`server started at http://localhost:${port}`);
 });
 
