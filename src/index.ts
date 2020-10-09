@@ -3,18 +3,19 @@ import { exec } from 'child_process';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import ffmpeg from 'fluent-ffmpeg';
+import fs from 'fs';
+import hasha from 'hasha';
 import path from 'path';
 import request from 'request';
 import { JsonRpcFuncSet, JsonRpcRequest } from './json-rpc';
-import ffmpeg from 'fluent-ffmpeg';
-import fs from 'fs'
 
 dotenv.config();
 const port = (process.env.SERVER_PORT || 8080) as number;
 const clientId = process.env.CLIENT_ID || '2914b90321254148b57f41438e31d7b3';
 const clientSecret = process.env.CLIENT_SECRET || '3d275f3a9f704c0484b4af6ef5456c89';
-const moviePath = process.env.MOVIE_PATH || 'D:\GitHub\SlowMovie\\Videos\INGLOURIOUS_BASTERDS.mp4';
-const movieTempFileName = process.env.MOVIE_TEMP_FILE_NAME || 'D:\\Temp\\test\\temp.jpg';
+const moviePath = process.env.MOVIE_PATH || 'D:\GitHub\SlowMovie\\Videos';
+const movieTempPath = process.env.MOVIE_TEMP_PATH || 'D:\\Temp\\test';
 
 const funcSet = new JsonRpcFuncSet();
 funcSet.add('screenOff', screenOff);
@@ -46,24 +47,42 @@ app.post('/api/rpc', (req, res) => {
   });
 });
 
-app.get('/api/movie/image/:seconds', (req, res) => {
-  return new Promise((resolve, reject) => {
-    const seconds = Number.parseInt(req.params.seconds, 10);
-    return ffmpeg()
-      .input(moviePath)
-      .inputOptions([`-ss ${seconds}`])
-      .outputOptions(['-frames:v 1'])
-      .output(movieTempFileName)
-      .on('end', resolve)
-      .on('error', reject)
-      .run();
-  }).then(() => {
-    return readFile(movieTempFileName);
+app.get('/api/movie/next-frame', (req, res) => {
+
+  
+
+  readFile(`${moviePath}\\movie.json`).then(data => {
+    return JSON.parse(data.toString()) as { fileName: string, startTime: string, speed: number };
+  }).then(movie => {
+    var start = Date.parse(movie.startTime);
+    var now = Date.now();
+    let seconds = (now - start) / 1000 * movie.speed;
+    if (seconds < 0) {
+      seconds = 0;
+    }
+    return readMovieFrame(movie.fileName, seconds);
   }).then(data => {
-    res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+    res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Frame-Hash': hasha(data) });
     res.end(data);
   }).catch(err => {
-    return res.status(500).json({
+    res.status(500).json({
+      status: 'error',
+      message: err,
+    });
+  });
+});
+
+app.get('/api/movie/frame/:seconds', (req, res) => {
+  const seconds = Number.parseInt(req.params.seconds, 10);
+  readFile(`${moviePath}\\movie.json`).then(data => {
+    return JSON.parse(data.toString()) as { fileName: string, seconds: number };
+  }).then(movie => {
+    return readMovieFrame(movie.fileName, seconds);
+  }).then(data => {
+    res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Frame-Hash': hasha(data) });
+    res.end(data);
+  }).catch(err => {
+    res.status(500).json({
       status: 'error',
       message: err,
     });
@@ -97,6 +116,21 @@ function screenOn(params: any): Promise<any> {
         resolve(stdout);
       }
     });
+  });
+}
+
+function readMovieFrame(fileName: string, seconds: number): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    return ffmpeg()
+      .input(`${moviePath}\\${fileName}`)
+      .inputOptions([`-ss ${seconds}`])
+      .outputOptions(['-frames:v 1'])
+      .output(`${movieTempPath}\\temp.jpg`)
+      .on('end', resolve)
+      .on('error', reject)
+      .run();
+  }).then(() => {
+    return readFile(`${movieTempPath}\\temp.jpg`);
   });
 }
 
