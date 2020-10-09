@@ -14,8 +14,8 @@ dotenv.config();
 const port = (process.env.SERVER_PORT || 8080) as number;
 const clientId = process.env.CLIENT_ID || '2914b90321254148b57f41438e31d7b3';
 const clientSecret = process.env.CLIENT_SECRET || '3d275f3a9f704c0484b4af6ef5456c89';
-const moviePath = process.env.MOVIE_PATH || 'D:\GitHub\SlowMovie\\Videos';
-const movieTempPath = process.env.MOVIE_TEMP_PATH || 'D:\\Temp\\test';
+const moviePath = process.env.MOVIE_PATH || '/home/pi/album/movie';
+const movieTempPath = process.env.MOVIE_TEMP_PATH || '/home/pi/album/movie';
 
 const funcSet = new JsonRpcFuncSet();
 funcSet.add('screenOff', screenOff);
