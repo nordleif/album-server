@@ -48,15 +48,12 @@ app.post('/api/rpc', (req, res) => {
 });
 
 app.get('/api/movie/next-frame', (req, res) => {
-
-  
-
-  readFile(`${moviePath}\\movie.json`).then(data => {
+  readFile(`${moviePath}/movie.json`).then(data => {
     return JSON.parse(data.toString()) as { fileName: string, startTime: string, speed: number };
   }).then(movie => {
     var start = Date.parse(movie.startTime);
     var now = Date.now();
-    let seconds = (now - start) / 1000 * movie.speed;
+    let seconds = (now - start) / 1000 * (movie.speed > 0 ? movie.speed : -1 / movie.speed);
     if (seconds < 0) {
       seconds = 0;
     }
@@ -74,7 +71,7 @@ app.get('/api/movie/next-frame', (req, res) => {
 
 app.get('/api/movie/frame/:seconds', (req, res) => {
   const seconds = Number.parseInt(req.params.seconds, 10);
-  readFile(`${moviePath}\\movie.json`).then(data => {
+  readFile(`${moviePath}/movie.json`).then(data => {
     return JSON.parse(data.toString()) as { fileName: string, seconds: number };
   }).then(movie => {
     return readMovieFrame(movie.fileName, seconds);
@@ -122,15 +119,15 @@ function screenOn(params: any): Promise<any> {
 function readMovieFrame(fileName: string, seconds: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     return ffmpeg()
-      .input(`${moviePath}\\${fileName}`)
+      .input(`${moviePath}/${fileName}`)
       .inputOptions([`-ss ${seconds}`])
       .outputOptions(['-frames:v 1'])
-      .output(`${movieTempPath}\\temp.jpg`)
+      .output(`${movieTempPath}/temp.jpg`)
       .on('end', resolve)
       .on('error', reject)
       .run();
   }).then(() => {
-    return readFile(`${movieTempPath}\\temp.jpg`);
+    return readFile(`${movieTempPath}/temp.jpg`);
   });
 }
 
